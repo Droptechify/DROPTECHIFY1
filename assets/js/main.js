@@ -152,6 +152,7 @@
     }
   });
 
+  
   /**
    * Navmenu Scrollspy
    */
@@ -175,3 +176,20 @@
   document.addEventListener('scroll', navmenuScrollspy);
 
 })();
+document.querySelectorAll('[data-target]').forEach(link => {
+  link.addEventListener('click', function (e) {
+    e.preventDefault();
+
+    const targetId = this.getAttribute('data-target');
+    const targetEl = document.getElementById(targetId);
+
+    if (targetEl) {
+      targetEl.scrollIntoView({
+        behavior: 'smooth'
+      });
+
+      // URL clean rakhe (no #)
+      window.history.pushState(null, '', window.location.pathname);
+    }
+  });
+});
