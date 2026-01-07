@@ -50,6 +50,26 @@
   });
 
   function php_email_form_submit(thisForm, action, formData) {
+    // Firebase Integration
+    if (typeof db !== 'undefined') {
+      const data = {};
+      formData.forEach((value, key) => {
+        data[key] = value;
+      });
+      data.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+      db.collection("contacts").add(data)
+        .then(() => {
+          thisForm.querySelector('.loading').classList.remove('d-block');
+          thisForm.querySelector('.sent-message').classList.add('d-block');
+          thisForm.reset();
+        })
+        .catch((error) => {
+          displayError(thisForm, "Firebase Error: " + error.message);
+        });
+      return;
+    }
+
     fetch(action, {
       method: 'POST',
       body: formData,

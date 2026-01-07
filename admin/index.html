@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - DropTechify</title>
+  <link href="../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="../assets/css/main.css" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="../firebase-config.js"></script>
+  <style>
+    body { background: #f4f7f6; }
+    .login-container { max-width: 400px; margin: 100px auto; }
+    .admin-content { display: none; padding: 20px; }
+    .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); }
+    .message-card { margin-bottom: 15px; border-left: 4px solid #0d6efd; }
+  </style>
+</head>
+<body>
+
+  <div id="login-section" class="login-container">
+    <div class="card p-4">
+      <h3 class="text-center mb-4">Admin Login</h3>
+      <form id="login-form">
+        <div class="mb-3">
+          <input type="email" id="email" class="form-control" placeholder="Email" required>
+        </div>
+        <div class="mb-3">
+          <input type="password" id="password" class="form-control" placeholder="Password" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Login</button>
+      </form>
+      <div id="login-error" class="text-danger mt-2"></div>
+    </div>
+  </div>
+
+  <div id="admin-panel" class="admin-content container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2>Contact Messages</h2>
+      <button id="logout-btn" class="btn btn-outline-danger">Logout</button>
+    </div>
+    <div id="messages-list" class="row">
+      <!-- Messages will appear here -->
+      <div class="text-center">Loading messages...</div>
+    </div>
+  </div>
+
+  <script>
+    const loginForm = document.getElementById('login-form');
+    const adminPanel = document.getElementById('admin-panel');
+    const loginSection = document.getElementById('login-section');
+    const messagesList = document.getElementById('messages-list');
+    const loginError = document.getElementById('login-error');
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        loginSection.style.display = 'none';
+        adminPanel.style.display = 'block';
+        loadMessages();
+      } else {
+        loginSection.style.display = 'block';
+        adminPanel.style.display = 'none';
+      }
+    });
+
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      auth.signInWithEmailAndPassword(email, password)
+        .catch(err => { loginError.innerText = err.message; });
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      auth.signOut();
+    });
+
+    function loadMessages() {
+      db.collection('contacts').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+        messagesList.innerHTML = '';
+        if (snapshot.empty) {
+          messagesList.innerHTML = '<div class="col-12 text-center">No messages found.</div>';
+          return;
+        }
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const date = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'Just now';
+          const card = `
+            <div class="col-md-6">
+              <div class="card p-3 message-card">
+                <h5>${data.name}</h5>
+                <p class="text-muted mb-1"><i class="bi bi-envelope"></i> ${data.email}</p>
+                <p class="text-muted mb-2"><i class="bi bi-tag"></i> ${data.subject}</p>
+                <hr>
+                <p>${data.message}</p>
+                <small class="text-muted">${date}</small>
+              </div>
+            </div>
+          `;
+          messagesList.innerHTML += card;
+        });
+      });
+    }
+  </script>
+</body>
+</html>
